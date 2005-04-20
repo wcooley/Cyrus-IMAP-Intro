@@ -6,6 +6,8 @@
 <head>
 <title>Introduction to Cyrus IMAP</title>
 <meta name="version" content="S5 1.0" />
+<meta name="author" content="Wil Cooley" />
+<meta name="company" content="Naked Ape Consulting, Ltd." />
 <link rel="stylesheet" href="ui/slides.css" type="text/css" media="projection" id="slideProj" />
 <link rel="stylesheet" href="ui/opera.css" type="text/css" media="projection" id="operaFix" />
 <link rel="stylesheet" href="ui/print.css" type="text/css" media="print" id="slidePrint" />
@@ -29,27 +31,188 @@
 <div class="presentation">
 
 <div class="slide">
-<h1>Introduction to Cyrus IMAP</h1>
-<h3>Wil Cooley</h3>
-<h4>Naked Ape Consulting, Ltd.</h4>
+    <h1>Introduction to Cyrus IMAP</h1>
+    <h3>Wil Cooley</h3>
+    <h4>Naked Ape Consulting, Ltd.</h4>
+    <h4>http://naked-ape.com</h4>
 </div>
 
 
 <div class="slide">
 <h1>Summary</h1>
+<div class="slidecontent">
 <ul>
-<li>Introduction to IMAP and Cyrus IMAP</li>
-<li>Cyrus Features</li>
-<li>Quick Installation</li>
-<li></li>
-<li></li>
-</ul>
+    <li>Introduction to IMAP</li>
+    <li>Introduction to Cyrus IMAP</li>
+    <li>Quick Installation</li>
+    <li>Advanced Features</li>
+    <li>Maintenance</li>
+    <li>Conclusion</li>
+</ul></div>
 
-<div class="handout">
-[any material that should appear in print but not on the slide]
+</div>
+
+<div class="slide">
+    <h1>Introduction to IMAP</h1>
+<div class="slidecontent">
+    <h2>What is IMAP?</h2>
+    <ul>
+        <li>Internet Mail Layers</li>
+        <ul>
+            <li>MTA - Mail Transfer Agent</li>
+            <li>MUA - Mail User Agent</li>
+            <li>MP[AL] - Mail Presentation Agent/Layer</li>
+        </ul>
+        <li>Internet Standard for Mail Access</li>
+    </ul>
+
 </div>
 </div>
 
+<div class="slide">
+    <h1>IMAP vs POP</h1>
+    <div class="slidecontent">
+        <ul>
+            <li>On-line</li>
+            <ul>
+                <li>Access Mail Anywhere</li>
+                <li>Stored on Server, Not Client</li>
+                <li>Persistent Message Flags</li>
+                <li>Concurrent Access</li>
+            </ul>
+            <li>Disconnected Access</li>
+            <li>Multiple Folders on Server</li>
+            <li>Shared Mailboxes</li>
+            <li>Store/Post Message (If MUA Supports)</li>
+        </ul>
+    </div>
+</div>
+
+<div class="slide">
+    <h1>Introduction to Cyrus IMAP</h1>
+    <div class="slidecontent">
+        <h2>Background</h2>
+        <ul>
+            <li>Developed at Carnegie Mellon, to Meet University Needs</li>
+            <li>Began In 1994 As Part of Andrew Distributed Computing System</li>
+            <li>Became Free Software Around 2000</li>
+            <li>BSD-ish License</li>
+        </ul>
+    </div>
+</div>
+
+<div class="slide">
+    <h1>Features of Cyrus IMAP</h1>
+    <div class="slidecontent">
+        <ul>
+            <li>Fast and Scalable</li>
+            <li>Efficient Storage</li>
+            <li>Shared Mailboxes</li>
+            <li>Access Control Lists</li>
+            <li>Server-side Mail Filtering with <i>Sieve</i></li>
+            <li>Duplicate Suppression</li>
+            <li>Indexed Server-side Searching with <i>Squatter</i></li>
+            <li>SSL/TLS Support</li>
+        </ul>
+    </div>
+</div>
+
+<div class="slide">
+    <h1>Features of Cyrus IMAP (Cont)</h1>
+    <div class="slidecontent">
+        <ul>
+            <li>&quot;Blackbox&quot; Server</li>
+            <li>Flexible Authentication with Cyrus SASL</li>
+            <li>Message Expiration with <i>ipurge</i></li>
+            <li>Real Quotas</li>
+            <li>Single-Instance Store</li>
+            <li>Partitioned Storage</li>
+            <li>POP3 and NNTP Servers</li>
+            <li>Clusterable w/<i>Murder</i></li>
+        </ul>
+    </div>
+</div>
+
+<div class="slide">
+    <h1>Problems with Cyrus IMAP</h1>
+    <div class="slidecontent">
+        <ul>
+            <li>Flexible Authentication Can Also Be Complex</li>
+            <li>Database Problems With Older Berkeley DB Versions</li>
+            <li>Was Not Free Software</li>
+            <li>More Complicated Management</li>
+            <li>Difficult Migration</li>
+            <li>Documentation Spotty</li>
+            <li>Percieved Problems</li>
+            <ul>
+                <li>Mail Storage is Opaque</li>
+                <li>Per-user Spam Scanning Is Tough</li>
+            </ul>
+        </ul>
+    </div>
+</div>
+
+<div class="slide">
+    <h1>Quick Installation Example</h1>
+    <div class="slidecontent">
+        <h2>Fedora Core 3</h2>
+        <ul>
+            <li>FC3 has Cyrus SASL and Cyrus IMAP Configured For
+            &quot;Typical&quot; Use</li>
+
+            <li>Remove UW-IMAP</li>
+            <li>Install Packages</li>
+                <pre>
+# yum install postfix cyrus-imapd cyrus-imapd-utils \
+    perl-Cyrus cyrus-sasl cyrus-sasl-plain
+                </pre>
+            <li>Start <code>saslauthd</code> and <code>imapd</code></li>
+                <pre>
+# /sbin/service saslauthd start
+# /sbin/service cyrus-imapd start
+                </pre>
+
+                
+        </ul>
+    </div>
+</div>
+
+<div class="slide">
+    <h1>Quick Installation Example (Cont)</h1>
+    <div class="slidecontent">
+        <ul>
+            <li>Set Password For Admin User <i>cyrus</i></li>
+            <li>Create Mailboxes With Admin Tool <code>cyradm</code></li>
+<pre>
+$  cyradm --user cyrus localhost
+IMAP Password: 
+localhost.localdomain&gt; createmailbox user.wcooley
+localhost.localdomain&gt; listmailbox user.wcooley
+user.wcooley (\HasNoChildren)  
+localhost.localdomain&gt; listaclmailbox user.wcooley
+wcooley lrswipcda
+localhost.localdomain&gt; listquotaroot user.wcooley
+</pre>
+
+            <li>Configure and Start Postfix</li>
+<pre>
+# alternatives --set mta /usr/sbin/sendmail.postfix 
+# postconf -e  mailbox_transport=\
+lmtp:unix:/var/lib/imap/socket/lmtp
+# /sbin/service sendmail stop
+# /sbin/service postfix start
+</pre>
+        </ul>
+    </div>
+</div>
+
+<div class="slide">
+    <h1></h1> <div class="slidecontent">
+        <ul>
+            <li></li>
+        </ul>
+    </div>
+</div>
 
 </div>
 
