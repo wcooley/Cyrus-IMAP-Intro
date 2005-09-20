@@ -32,9 +32,11 @@
 
 <div class="slide">
     <h1>Introduction to Cyrus IMAP</h1>
-    <h3>Wil Cooley</h3>
+    <h3>Wil Cooley &lt;<a
+            href="wcooley&#64;nakedape.cc"
+            >wcooley&#64;nakedape.cc</a>&gt;</h3>
     <h4>Naked Ape Consulting, Ltd.</h4>
-    <h4>http://naked-ape.com</h4>
+    <h4><a href="http://naked-ape.com">http://naked-ape.com</a></h4>
 </div>
 
 
@@ -45,8 +47,8 @@
     <li>Introduction to IMAP</li>
     <li>Introduction to Cyrus IMAP</li>
     <li>Quick Installation</li>
-    <li>Advanced Features</li>
-    <li>Maintenance</li>
+    <li>Configuration</li>
+    <li>Example Installations</li>
     <li>Conclusion</li>
 </ul></div>
 
@@ -64,6 +66,7 @@
             <li>MP[AL] - Mail Presentation Agent/Layer</li>
         </ul>
         <li>Internet Standard for Mail Access</li>
+        <li>Supported By Most MUAs</li>
     </ul>
 
 </div>
@@ -113,6 +116,7 @@
             <li>Duplicate Suppression</li>
             <li>Indexed Server-side Searching with <i>Squatter</i></li>
             <li>SSL/TLS Support</li>
+            <li>Direct Mailbox Delivery with Address Extension</li>
         </ul>
     </div>
 </div>
@@ -121,6 +125,7 @@
     <h1>Features of Cyrus IMAP (Cont)</h1>
     <div class="slidecontent">
         <ul>
+            <li>Virtual Hosting</li>
             <li>&quot;Blackbox&quot; Server</li>
             <li>Flexible Authentication with Cyrus SASL</li>
             <li>Message Expiration with <i>ipurge</i></li>
@@ -147,6 +152,7 @@
             <ul>
                 <li>Mail Storage is Opaque</li>
                 <li>Per-user Spam Scanning Is Tough</li>
+                <li>Databases Cannot be SQL Server</li>
             </ul>
         </ul>
     </div>
@@ -164,7 +170,8 @@
             <li>Install Packages</li>
                 <pre>
 # yum install postfix cyrus-imapd cyrus-imapd-utils \
-    perl-Cyrus cyrus-sasl cyrus-sasl-plain
+    perl-Cyrus cyrus-sasl cyrus-sasl-plain \
+    perl-Term-ReadLine-Gnu
                 </pre>
             <li>Start <code>saslauthd</code> and <code>imapd</code></li>
                 <pre>
@@ -186,12 +193,12 @@
 <pre>
 $  cyradm --user cyrus localhost
 IMAP Password: 
-localhost.localdomain&gt; createmailbox user.wcooley
-localhost.localdomain&gt; listmailbox user.wcooley
+localhost&gt; createmailbox user.wcooley
+localhost&gt; listmailbox user.wcooley
 user.wcooley (\HasNoChildren)  
-localhost.localdomain&gt; listaclmailbox user.wcooley
+localhost&gt; listaclmailbox user.wcooley
 wcooley lrswipcda
-localhost.localdomain&gt; listquotaroot user.wcooley
+localhost&gt; listquotaroot user.wcooley
 </pre>
 
             <li>Configure and Start Postfix</li>
@@ -202,17 +209,268 @@ lmtp:unix:/var/lib/imap/socket/lmtp
 # /sbin/service sendmail stop
 # /sbin/service postfix start
 </pre>
+            <li>Now Have a Live Cyrus IMAP Server!</li>
+        </ul>
+    </div>
+</div>
+
+
+<div class="slide">
+    <h1>Managment Overview</h1>
+    <div class="slidecontent">
+        <ul>
+            <li><i>cyradm</i> is Command-Line Management Tool</li>
+
+            <li><tt>/etc/cyrus.conf</tt> Start-up, Super-server, Scheduling,
+            Like <tt>init</tt>, <tt>inetd</tt>, <tt>cron</tt></li>
+
+            <li><tt>/etc/imapd.conf</tt> Holds Configuration Parameters</li>
+            <li>Several Other Test and Data Store Utilities</li>
+
+            <li>Deleting Mailboxes</li>
+<pre>
+localhost&gt; cm user.wcooley.test
+localhost&gt; dm user.wcooley.test
+deletemailbox: Permission denied
+localhost&gt; sam user.wcooley.test cyrus c
+localhost&gt; dm user.wcooley.test
+</pre>
         </ul>
     </div>
 </div>
 
 <div class="slide">
-    <h1></h1> <div class="slidecontent">
+    <h1>Access Control Lists</h1>
+    <div class="slidecontent">
+        <ul>
+            <li>Use <i>cyradm</i> To Manage</li>
+            <ul>
+                <li><tt>deleteacl</tt></li>
+                <li><tt>setacl</tt></li>
+                <li><tt>listacl</tt></li>
+            </ul>
+            <br />
+            <li><b>l</b>: Lookup (visible to LIST/LSUB/UNSEEN)</li>
+            <li><b>r</b>: Read (SELECT, CHECK, FETCH, PARTIAL, SEARCH, COPY
+            source)</li>
+            <li><b>s</b>: Seen (STORE \SEEN)</li>
+        </ul>
+    </div>
+</div>
+
+<div class="slide">
+    <h1>Access Control Lists (Cont)</h1>
+    <div class="slidecontent">
+        <ul>
+            <li><b>w</b>: Write flags other than \SEEN and \DELETED</li>
+            <li><b>i</b>: Insert (APPEND, COPY destination)</li>
+            <li><b>p</b>: Post (send mail to mailbox)</li>
+            <li><b>c</b>: Create and Delete mailbox (CREATE new sub-mailboxes,
+            RENAME or DELETE mailbox)</li>
+            <li><b>d</b>: Delete (STORE \DELETED, EXPUNGE)</li>
+            <li><b>a</b>: Administer (SETACL)</li>
+        </ul>
+    </div>
+</div>
+
+<div class="slide">
+    <h1>Sieve Filtering</h1>
+    <div class="slidecontent">
+        <ul>
+            <li>Write a Sieve Script</li>
+<pre>
+require [ "fileinto", "imapflags" ];
+if header :contains "From" [ "billg@microsoft.com",
+        "robinson-west.com" ] {
+    addflag "\\Seen"; 
+}
+elsif header :contains "X-BeenThere" "plug-announce" {
+    fileinto "INBOX.plug.announce";
+}
+elsif header :contains "X-BeenThere" "plug@" {
+    fileinto "INBOX.plug";
+}
+elsif header :contains "X-BeenThere" "plug-*@" {
+    fileinto "INBOX.plug.other";
+}
+</pre>
+        </ul>
+    </div>
+</div>
+
+<div class="slide">
+    <h1>Sieve Filtering (Cont)</h1>
+    <div class="slidecontent">
+        <ul>
+            <li>Upload Script</li>
+            <pre>
+$ sieveshell localhost
+connecting to localhost
+Please enter your password: 
+&gt; put sieve-script 
+&gt; ls
+sieve-script 
+&gt; activate sieve-script
+&gt; ls
+sieve-script  &lt;- active script
+&gt; quit
+</pre>
+        </ul>
+    </div>
+</div>
+
+<div class="slide">
+    <h1>Extension Delivery</h1>
+    <div class="slidecontent">
+        <ul>
+            <li><i>&quot;+&quot;</i> Recipient Delimiter in Most MTAs</li>
+            <li>Create Mailbox and Set ACL</li>
+
+<pre>
+localhost&gt; setaclmailbox INBOX.plug \
+    anonymous p
+localhost&gt; listaclmailbox INBOX.plug
+anonymous p
+wcooley lrswipcda
+</pre>
+
+            <li>Messages for <i>wcooley+plug@nakedape.cc</i> Delivered
+            Directly to <i>INBOX.plug</i></li>
+
+        </ul>
+    </div>
+</div>
+
+<div class="slide">
+    <h1>Shared Mailboxes</h1>
+    <div class="slidecontent">
+        <ul>
+            <li>Create Mailbox and Set ACLs
+<pre>
+localhost&gt; cm shared.announcements
+localhost&gt; lam shared.announcements
+anyone lrs
+localhost&gt; sam shared.announcements \
+    group:wcooley all
+localhost&gt; lam shared.announcements
+group:wcooley lrswipcda
+anyone lrs
+</pre>
+            </li>
+            <li>Sometimes Need to Fiddle With MUAs Namespace Setting</li>
+            <li><tt>postuser</tt> in <tt>/etc/imapd.conf</tt> Provides
+            Extension-based Posting</li>
+            <li>Default <i>&quot;bb&quot;</i> (bb+shared.announcements@)</li>
+            <li>Some MTAs Can Even Post Directly!</li>
+        </ul>
+    </div>
+</div>
+
+<div class="slide">
+    <h1>Quotas</h1>
+    <div class="slidecontent">
+        <ul>
+            <li>Use <i>cyradm</i> to Setup</li>
+<pre>
+localhost&gt; setquota user.wcooley 10240
+quota:10240
+localhost&gt; lq user.wcooley
+ STORAGE 0/10240 (0%)
+</pre>
+            <li>Use <tt>quotawarn</tt> or <tt>quotawarnkb</tt> in
+            <tt>/etc/imapd.conf</tt> to Warn Users</li>
+
+            <li>Use <tt>lmtp_over_quota_perm_failure</tt> to Control Whether
+            Messages Bounce or Are Held In MTA's Queue</li>
+        </ul>
+    </div>
+</div>
+
+<div class="slide">
+    <h1><i>Squatter</i> Mailbox Indexing</h1>
+    <div class="slidecontent">
+        <ul>
+            <li>Searching Large Mailboxes Is Nearly Instantaneous</li>
+            <li>Running Once Daily Is Enough</li>
+            <li>Messages Not Indexed Will Be Searched Directly</li>
+            <li>Add Entry to <tt>/etc/cyrus.conf</tt>
+            <pre>
+EVENTS {
+  ...
+  squatter cmd="squatter -s -r user" at=0200
+  ...
+}
+</pre>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<div class="slide">
+    <h1>MESD Installation</h1>
+    <div class="slidecontent">
+        <h2>Eric Harrison, Multnomah Education Service District</h2>
+        <ul>
+            <li>1413 Mailboxes, 700-800 Concurrent Users</li>
+            <li>Hardware:</li>
+            <ul>
+            <li>Dual 2.4GHz Xeons</li>
+            <li>2G RAM</li>
+            <li>Three 36G U320 SCSI Drives, Hardware RAID5</li>
+            </ul>
+        </ul>
+
+        <ul>
+            <li>9695 Mailboxes, 700-800 Concurrent Users</li>
+            <li>Hardware:</li>
+            <ul>
+            <li>Single Pentium III 1GHz</li>
+            <li>1GB RAM</li>
+            <li>Single 36G U160 SCSI Drive</li>
+            </ul>
+        </ul>
+    </div>
+</div>
+
+<div class="slide">
+    <h1>OSU Installation</h1>
+    <div class="slidecontent">
+        <h2>Andrew Morgan, Oregon State University</h2>
+        <ul>
+            <li>3500 Accounts, 300 Concurrent Users</li>
+            <li>250,000 Logins Daily, 7500 Users</li>
+            <ul>
+                <li>Dual 2.8GHz Pentium 4</li>
+                <li>2GB RAM</li>
+                <li>Fourteen 73GB 15k drives, RAID 1+0.</li>
+            </ul>
+        </ul>
+    </div>
+</div>
+
+<div class="slide">
+    <h1>Conclusion</h1>
+    <div class="slidecontent">
+        <ul>
+            <li>Introduced IMAP and Cyrus IMAP</li>
+            <li>Quick Installation on Fedora Core 3</li>
+            <li>Overview of Mailbox Management, ACLs, Sieve, Quotas, Extension
+            Delivery, Shared Mailboxes and Squatter.</li>
+        </ul>
+        <br />
+    </div>
+</div>
+
+<!--
+<div class="slide">
+    <h1></h1>
+    <div class="slidecontent">
         <ul>
             <li></li>
         </ul>
     </div>
 </div>
+-->
 
 </div>
 
